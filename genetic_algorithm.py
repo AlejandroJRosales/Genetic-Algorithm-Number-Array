@@ -1,6 +1,5 @@
 import random
 
-numbers = [random.randint(0, 100) for i in range(1000)]
 
 iterations = 1000
 pop_size = 500
@@ -8,12 +7,10 @@ tournament_size = 3
 pop_keep = .6
 prob_crossover = 0.9
 prob_mutation = 0.15
-target = []
-for number in range(len(numbers)):
-    target.append(random.choice(numbers))
+target = [random.randint(0, 100) for i in range(10)]
 genes_per_ch = len(target)
-interval_max = max(numbers)
-interval_min = min(numbers)
+interval_max = max(target)
+interval_min = min(target)
 
 
 def generate_population():
