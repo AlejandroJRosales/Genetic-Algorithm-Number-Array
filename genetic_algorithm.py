@@ -1,13 +1,13 @@
 import random
 
 
-iterations = 1000
-pop_size = 500
+iterations = 10000
+pop_size = 200
 tournament_size = 3
 pop_keep = .6
 prob_crossover = 0.9
 prob_mutation = 0.15
-target = [random.randint(0, 100) for i in range(10)]
+target = [random.randint(0, 90) for i in range(50)]
 genes_per_ch = len(target)
 interval_max = max(target)
 interval_min = min(target)
@@ -76,10 +76,9 @@ def mutation(population):
         if random.random() <= prob_mutation:
             ch = population.pop(individual)
             for i in range(0, 3):
-                r = random.randint(0, 1)
-                get_chr = ch.pop(random.randint(0, genes_per_ch))
+                get_chr = ch.pop(random.randint(0, genes_per_ch - 1))
                 mutate = 1
-                if r == 0:
+                if random.randint(0, 1) == 0:
                     if get_chr >= interval_min + mutate:
                         ch.append(get_chr - mutate)
                     else:
@@ -102,12 +101,12 @@ def main():
     fitness_scores = []
     for generation in range(0, iterations + 1):
         fitness_scores = calc_fitness(population)
-        if generation % 10 == 0:
-            best = min(fitness_scores)
-            mode = max(set(fitness_scores), key=fitness_scores.count)
-            worst = max(fitness_scores)
-            display_best = fitness_scores[fitness_scores.index(best)]
-            display_worst = fitness_scores[fitness_scores.index(worst)]
+        best = min(fitness_scores)
+        mode = max(set(fitness_scores), key=fitness_scores.count)
+        worst = max(fitness_scores)
+        display_best = fitness_scores[fitness_scores.index(best)]
+        display_worst = fitness_scores[fitness_scores.index(worst)]
+        if generation % 10 == 0 or display_best == 0:
             print("[G %3d] score=(%4f, %4f, %4f): %r" %
                   (generation, display_best, mode, display_worst, population[fitness_scores.index(best)]))
             if display_best == 0:
