@@ -1,68 +1,65 @@
 import random
 
-genes_per_ch = 5
-interval_max = 9
-interval_min = 0
-iterations = 100000
-pop_keep = .8
-pop_size = 20
+numbers = [random.randint(0, 100) for i in range(1000)]
+
+iterations = 1000
+pop_size = 500
+tournament_size = 3
+pop_keep = .6
 prob_crossover = 0.9
 prob_mutation = 0.15
-tournament_size = 3
-target = int(input("Target integer: "))
+target = []
+for number in range(len(numbers)):
+    target.append(random.choice(numbers))
+genes_per_ch = len(target)
+interval_max = max(numbers)
+interval_min = min(numbers)
 
 
 def generate_population():
     individuals = []
-    for i in range(pop_size):
+    for i in range(0, pop_size):
         chromosomes = []
-        for c in range(genes_per_ch):
+        for c in range(0, genes_per_ch):
             chromosomes.append(random.randint(interval_min, interval_max))
         individuals.append(chromosomes)
     return individuals
 
 
-def evaluate(population):
-    pop_scores = []
-    for individual in population:
-        if len(individual) < genes_per_ch:
-            missing_chr = genes_per_ch - len(individual)
-            for i in range(missing_chr):
-                individual.append(random.randint(interval_min, interval_max))
-        score = 0
-        for chromosomes in individual:
-            score += chromosomes
-        pop_scores.append(score)
-    return pop_scores
+def calc_fitness(population):
+    fitness_scores = []
+    for individual in range(len(population)):
+        if len(population[individual]) < genes_per_ch:
+            missing_chr = genes_per_ch - len(population[individual])
+            for i in range(0, missing_chr):
+                individual_index = population[individual]
+                individual_index.append(random.randint(interval_min, interval_max))
+        fitness = 0
+        for i in range(genes_per_ch):
+            place = population[individual]
+            difference = abs(target[i] - place[i])
+            fitness += difference
+        fitness_scores.append(fitness)
+    return fitness_scores
 
 
-def calc_fitness(pop_scores):
-    pop_fitness = []
-    for fitness in pop_scores:
-        error = abs(target - fitness)
-        pop_fitness.append(error)
-    return pop_fitness
-
-
-def select_fittest(population, pop_fitness):
-    fitter_population = [population[pop_fitness.index(min(pop_fitness))]]
-    for i in range(int(len(population) * pop_keep)):
-        r = random.randint(0, len(pop_fitness) - 1)
-        best = pop_fitness[r]
-        best_index = population[r]
-        for member in range(tournament_size):
-            competitor_index = random.randint(0, len(pop_fitness) - 1)
-            if pop_fitness[competitor_index] < best:
-                best = pop_fitness[competitor_index]
-                best_index = population[competitor_index]
-        fitter_population.append(best_index)
+def select_fittest(population, fitness_scores):
+    fitter_population = [population[fitness_scores.index(min(fitness_scores))]]
+    for i in range(0, int(len(population) * pop_keep)):
+        r = random.randint(0, len(fitness_scores) - 1)
+        best = fitness_scores[r]
+        best_ch = population[r]
+        for member in range(0, tournament_size):
+            competitor_index = random.randint(0, len(fitness_scores) - 1)
+            if fitness_scores[competitor_index] < best:
+                best = fitness_scores[competitor_index]
+                best_ch = population[competitor_index]
+        fitter_population.append(best_ch)
     for a in range(len(population) - len(fitter_population)):
         chromosomes = []
-        local_min = min(population[pop_fitness.index(min(pop_fitness))])
-        local_max = max(population[pop_fitness.index(min(pop_fitness))])
         for c in range(0, genes_per_ch):
-            chromosomes.append(random.randint(local_min, local_max))
-        fitter_population.insert(random.randint(0, len(fitter_population)), chromosomes)
+            chromosomes.append(random.randint(interval_min, interval_max))
+        fitter_population.append(chromosomes)
     return fitter_population
 
 
@@ -72,8 +69,8 @@ def crossover(population):
             parent1 = population.pop(individual)
             parent2 = population.pop(individual + 1)
             r = random.randint(0, genes_per_ch)
-            population.insert(random.randint(0, genes_per_ch), parent1[:r] + parent2[r:])
-            population.insert(random.randint(0, genes_per_ch), parent2[:r] + parent1[r:])
+            population.insert(individual, parent1[:r] + parent2[r:])
+            population.insert(individual + 1, parent2[:r] + parent1[r:])
     return population
 
 
@@ -83,7 +80,7 @@ def mutation(population):
             ch = population.pop(individual)
             for i in range(0, 3):
                 r = random.randint(0, 1)
-                get_chr = ch.pop(random.randint(0, len(ch) - 1))
+                get_chr = ch.pop(random.randint(0, genes_per_ch))
                 mutate = 1
                 if r == 0:
                     if get_chr >= interval_min + mutate:
@@ -105,20 +102,24 @@ def breed(population):
 
 def main():
     population = generate_population()
+    fitness_scores = []
     for generation in range(0, iterations + 1):
-        pop_scores = evaluate(population)
-        pop_fitness = calc_fitness(pop_scores)
-        if (generation % 10 == 0) | (target == pop_scores[pop_fitness.index(min(pop_fitness))]):
-            best = min(pop_fitness)
-            mode = max(set(pop_scores), key=pop_scores.count)
-            worst = max(pop_fitness)
-            display_best = pop_scores[pop_fitness.index(best)]
-            display_worst = pop_scores[pop_fitness.index(worst)]
-            print("[G %3d] score=(%4d, %4d, %4d): %r " %
-                  (generation, display_best, mode, display_worst, population[pop_fitness.index(best)]))
-            if target == pop_scores[pop_fitness.index(min(pop_fitness))]:
+        fitness_scores = calc_fitness(population)
+        if generation % 10 == 0:
+            best = min(fitness_scores)
+            mode = max(set(fitness_scores), key=fitness_scores.count)
+            worst = max(fitness_scores)
+            display_best = fitness_scores[fitness_scores.index(best)]
+            display_worst = fitness_scores[fitness_scores.index(worst)]
+            print("[G %3d] score=(%4f, %4f, %4f): %r" %
+                  (generation, display_best, mode, display_worst, population[fitness_scores.index(best)]))
+            if display_best == 0:
                 break
-        population = breed(select_fittest(population, pop_fitness))
+        population = breed(select_fittest(population, fitness_scores))
+    best = min(fitness_scores)
+    display_best = population[fitness_scores.index(best)]
+    print("\n\nT:", target)
+    print("A:", display_best)
 
 
 if __name__ == "__main__":
